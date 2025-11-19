@@ -6,11 +6,10 @@ import json
 import tkinter as tk
 from tkinter import scrolledtext, messagebox, ttk
 
-# --- CONFIGURAÇÕES ---
 SERVER_IP = "127.0.0.1"
 SERVER_PORT = 9000
-TIMEOUT = 3.0       # Tempo para estourar o temporizador
-MAX_RETRIES = 5     # Máximo de tentativas de retransmissão
+TIMEOUT = 3.0     
+MAX_RETRIES = 5     #
 
 class RUDPClientGUI:
     def __init__(self, master):
@@ -21,21 +20,21 @@ class RUDPClientGUI:
         self.my_name = ""
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         
-        # --- CONTROLE DO PROTOCOLO ---
-        self.ack_events = {}    # Eventos para aguardar ACKs
-        self.ack_results = {}   # Resultado do ACK (True/False)
-        self.seq_counters = {}  # Contador de Sequência de Envio
-        self.peer_last_seq = {} # Deduplicação: Último Seq recebido de cada usuário
+        # CONTROLE DO PROTOCOLO
+        self.ack_events = {}    # aguardar ack
+        self.ack_results = {}   # resultado do ACK tru or false
+        self.seq_counters = {}  # contador sequência de envio
+        self.peer_last_seq = {} # deduplicação: ultimo seq recebido de cada usuário
 
         self.running = True
         self.conversations = {} 
         self.current_chat_partner = None 
 
-        # --- ESTILOS DA INTERFACE ---
+        # interface
         style = ttk.Style()
         style.configure("TNotebook", tabposition='n') 
 
-        # --- TELA DE LOGIN ---
+        # tela login
         frame_conn = tk.Frame(master, bg="#f0f0f0", bd=1, relief=tk.RAISED)
         frame_conn.pack(pady=5, fill=tk.X, padx=5)
         
@@ -45,18 +44,18 @@ class RUDPClientGUI:
         self.btn_login = tk.Button(frame_conn, text="Entrar", command=self.do_login, bg="#4CAF50", fg="white", font=("Arial", 10, "bold"))
         self.btn_login.pack(side=tk.LEFT, padx=5)
 
-        # --- ÁREA PRINCIPAL (ABAS) ---
+        # principal
         self.notebook = ttk.Notebook(master)
         self.notebook.pack(expand=True, fill=tk.BOTH, padx=5, pady=5)
 
-        # ================= ABA 1: CHAT =================
+        # chat
         self.tab_chat = tk.Frame(self.notebook)
         self.notebook.add(self.tab_chat, text="   💬 Mensagens   ")
 
         paned = tk.PanedWindow(self.tab_chat, orient=tk.HORIZONTAL, sashrelief=tk.RAISED)
         paned.pack(fill=tk.BOTH, expand=True)
 
-        # Lista de Usuários (Esquerda)
+        # Lista de Usuários
         frame_left = tk.Frame(paned, width=200, bg="#e0e0e0")
         paned.add(frame_left)
         tk.Label(frame_left, text="Usuários Online", bg="#e0e0e0", font=("Arial", 10, "bold")).pack(pady=5)
@@ -66,7 +65,7 @@ class RUDPClientGUI:
         self.list_users.pack(expand=True, fill=tk.BOTH, padx=5, pady=5)
         self.list_users.bind('<<ListboxSelect>>', self.on_select_user)
 
-        # Conversa (Direita)
+        # Conversa 
         frame_right = tk.Frame(paned, bg="white")
         paned.add(frame_right)
         self.lbl_talking_to = tk.Label(frame_right, text="Selecione um contato...", bg="#eee", font=("Arial", 11, "bold"), anchor="w", padx=10, pady=5)
@@ -85,7 +84,7 @@ class RUDPClientGUI:
         self.btn_send = tk.Button(frame_send, text="ENVIAR ➤", command=self.on_send_click, state=tk.DISABLED, bg="#2196F3", fg="white", font=("Arial", 10, "bold"))
         self.btn_send.pack(side=tk.LEFT, padx=5)
 
-        # ================= ABA 2: LOGS E TESTES =================
+        # logs e testes
         self.tab_logs = tk.Frame(self.notebook)
         self.notebook.add(self.tab_logs, text="   🛠️ Debug & Testes   ")
         
@@ -94,25 +93,25 @@ class RUDPClientGUI:
         self.log_area = scrolledtext.ScrolledText(frame_logs_content, state='disabled', width=60, bg="black", fg="#00FF00", font=("Consolas", 9))
         self.log_area.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
-        # --- PAINEL DE SIMULAÇÃO (REQ. DO PROFESSOR) ---
+        #  PAINEL DE SIMULAÇÃO (REQ. DO PROFESSOR)
         frame_sim = tk.Frame(frame_logs_content, width=220, bg="#e0e0e0")
         frame_sim.pack(side=tk.RIGHT, fill=tk.Y)
         
         tk.Label(frame_sim, text="Opções de Teste", bg="#e0e0e0", font=("Arial", 11, "bold")).pack(pady=10)
         
-        # 1. Retransmissão por Erro
+        # 1. retransmissão por Erro
         self.var_corrupt = tk.BooleanVar()
-        tk.Checkbutton(frame_sim, text="Simular Erro (Bit Flip)\n(Ativar no Remetente)", variable=self.var_corrupt, bg="#e0e0e0", justify="left").pack(anchor='w', padx=10, pady=5)
+        tk.Checkbutton(frame_sim, text="Simular Erro (Bit Flip)", variable=self.var_corrupt, bg="#e0e0e0", justify="left").pack(anchor='w', padx=10, pady=5)
         
-        # 2. Retransmissão por Estouro de Tempo (Perda de Pacote)
+        # 2. retransmissão por Estouro de Tempo 
         self.var_drop_in = tk.BooleanVar()
-        tk.Checkbutton(frame_sim, text="Simular Perda de Pacote\n(Ativar no Receptor)", variable=self.var_drop_in, bg="#e0e0e0", justify="left").pack(anchor='w', padx=10, pady=5)
+        tk.Checkbutton(frame_sim, text="Simular Perda de Pacote", variable=self.var_drop_in, bg="#e0e0e0", justify="left").pack(anchor='w', padx=10, pady=5)
         
         # 3. Retransmissão por Descarte de Confirmação (ACK)
         self.var_drop_ack = tk.BooleanVar()
-        tk.Checkbutton(frame_sim, text="Simular Perda de ACK\n(Ativar no Receptor)", variable=self.var_drop_ack, bg="#e0e0e0", justify="left").pack(anchor='w', padx=10, pady=5)
+        tk.Checkbutton(frame_sim, text="Simular Perda de ACK", variable=self.var_drop_ack, bg="#e0e0e0", justify="left").pack(anchor='w', padx=10, pady=5)
 
-    # --- LÓGICA DE INTERFACE ---
+    # logica interface
     def on_select_user(self, event):
         selection = self.list_users.curselection()
         if not selection: return
@@ -152,7 +151,7 @@ class RUDPClientGUI:
             self.chat_area.see(tk.END)
             self.chat_area.config(state='disabled')
 
-    # --- THREAD DE RECEBIMENTO (CORE DO PROTOCOLO) ---
+    # THREAD DE RECEBIMENTO - CRE DO PROTOCOLO
     def receiver_thread(self):
         self.sock.settimeout(None)
         while self.running:
@@ -180,7 +179,7 @@ class RUDPClientGUI:
                     self.master.after(0, lambda c=clients_str: self.update_list_ui(c))
                     continue
 
-                # REQUISITO 1 (Lado Receptor): Verifica Checksum
+                # REQUISITO 1 : Verifica Checksum
                 # Se o "Bit Flip" foi ativado no remetente, o CRC falha aqui.
                 if t == "RELAY":
                     chk_recv = pkt.get("checksum")
@@ -230,7 +229,7 @@ class RUDPClientGUI:
             except OSError: break
             except Exception as e: self.log_debug(f"Erro Receiver: {e}")
 
-    # --- ENVIO CONFIÁVEL ---
+    # envio
     def on_send_click(self, event=None):
         if not self.current_chat_partner:
             messagebox.showwarning("Aviso", "Selecione um usuário!")
@@ -254,7 +253,7 @@ class RUDPClientGUI:
         pkt = {"type": "DATA", "from": self.my_name, "dest": dest, "seq": seq, "payload": message}
         data_bytes = self.make_packet(pkt)
 
-        # REQUISITO 1 (Lado Remetente): Alterar informação após calcular checksum
+        # REQUISITO 1  Alterar informação após calcular checksum
         if self.var_corrupt.get():
             b = bytearray(data_bytes)
             if len(b) > 0: b[min(10, len(b)-1)] ^= 0xFF # Inverte bits
@@ -287,7 +286,7 @@ class RUDPClientGUI:
         if key in self.ack_events: del self.ack_events[key]
         if key in self.ack_results: del self.ack_results[key]
 
-    # --- UTILITÁRIOS ---
+    # utilitarios
     def log_debug(self, text):
         timestamp = time.strftime("%H:%M:%S")
         self.log_area.config(state='normal')

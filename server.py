@@ -2,7 +2,7 @@ import socket
 import zlib
 import json
 
-# --- CONFIGURAÇÕES ---
+# CONFIGURAÇÕES
 SERVER_IP = "127.0.0.1"
 SERVER_PORT = 9000
 
@@ -45,8 +45,8 @@ try:
                 print(f"[LIXO] Recebido dados inválidos de {addr}")
                 continue
 
-            # --- LÓGICA DE LOG INTELIGENTE (DEDUPLICAÇÃO VISUAL) ---
-            # Verifica se é exatamente o mesmo pacote de antes (Retransmissão)
+            # logica dos logs repetidos
+            # Verifica se é exatamente o mesmo pacote de antes 
             current_checksum = obj.get('checksum')
             is_duplicate = False
             
@@ -70,11 +70,11 @@ try:
                 print(f"\n{'='*10} NOVO PACOTE DE {addr} {'='*10}")
                 print(json.dumps(obj, indent=4, ensure_ascii=False))
                 print("-" * 60)
-            # -------------------------------------------------------
+            
 
             t = obj['type']
 
-            # --- CHECAGEM DE ERRO DE INTEGRIDADE (CRC) ---
+            # CHECAGEM DE ERRO DE INTEGRIDADE 
             chk_recv = obj.get("checksum")
             chk_calc = compute_checksum_dict(obj)
             
@@ -82,9 +82,9 @@ try:
                 print(f"❌ [ERRO DE INTEGRIDADE] Checksum falhou!")
                 print(f"   Esperado: {chk_calc} | Recebido: {chk_recv}")
                 print("   -> O pacote foi descartado pelo servidor.")
-                continue # Pula o processamento, obrigando o cliente a reenviar
+                continue # Pula o processamento obrigando o cliente a reenviar
 
-            # --- PROCESSAMENTO ---
+            # PROCESSAMENTO 
 
             # 1. LOGIN
             if t == "LOGIN":
@@ -92,7 +92,7 @@ try:
                 if name:
                     nkey = normalize(name)
                     clientes[nkey] = (name, addr)
-                    print(f"✅ [CONEXÃO] Usuário '{name}' registrado.")
+                    print(f"[CONEXÃO] Usuário '{name}' registrado.")
                     sock.sendto(make_packet({"type": "LOGIN_OK", "msg": f"Bem-vindo, {name}!"}), addr)
                 continue
 
@@ -103,7 +103,7 @@ try:
                 sock.sendto(make_packet({"type": "LIST_RESP", "clients": msg_lista}), addr)
                 continue
 
-            # 3. MENSAGEM DE DADOS (RELAY)
+            # 3. mensagen de dados delay
             if t == "DATA":
                 dest_name = obj.get("dest", "")
                 dest_key = normalize(dest_name)
@@ -117,13 +117,13 @@ try:
                         "payload": obj.get("payload")
                     }
                     sock.sendto(make_packet(relay_pkt), target_addr)
-                    print(f"📨 [ENCAMINHAMENTO] Msg de '{obj.get('from')}' -> '{target_name}' (Seq {obj.get('seq')})")
+                    print(f"[ENCAMINHAMENTO] Msg de '{obj.get('from')}' -> '{target_name}' (Seq {obj.get('seq')})")
                 else:
                     sock.sendto(make_packet({"type": "ERROR", "msg": f"Usuário {dest_name} não encontrado."}), addr)
-                    print(f"🚫 [ERRO LÓGICO] Tentativa de envio para usuário inexistente: '{dest_name}'")
+                    print(f"[ERRO LÓGICO] Tentativa de envio para usuário inexistente: '{dest_name}'")
                 continue
 
-            # 4. CONFIRMAÇÃO (ACK)
+            # 4. confirmaçao ack
             if t == "ACK":
                 to_name = obj.get("to", "")
                 to_key = normalize(to_name)
@@ -136,7 +136,7 @@ try:
                         "seq": obj.get("seq")
                     }
                     sock.sendto(make_packet(ack_fwd), target_addr)
-                    print(f"👍 [ACK REPASSADO] De '{obj.get('from')}' -> '{target_name}' (Ref. Seq {obj.get('seq')})")
+                    print(f"[ACK REPASSADO] De '{obj.get('from')}' -> '{target_name}' (Ref. Seq {obj.get('seq')})")
                 continue
 
             if t == "LOGOUT":
