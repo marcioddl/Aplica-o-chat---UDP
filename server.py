@@ -3,7 +3,7 @@ import zlib
 import json
 
 # CONFIGURAÇÕES
-SERVER_IP = "127.0.0.1"
+SERVER_IP = "127.0.0.1"  
 SERVER_PORT = 9000
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -79,7 +79,7 @@ try:
             chk_calc = compute_checksum_dict(obj)
             
             if chk_recv is None or chk_calc != chk_recv:
-                print(f"❌ [ERRO DE INTEGRIDADE] Checksum falhou!")
+                print(f"[ERRO DE INTEGRIDADE] Checksum falhou!")
                 print(f"   Esperado: {chk_calc} | Recebido: {chk_recv}")
                 print("   -> O pacote foi descartado pelo servidor.")
                 continue # Pula o processamento obrigando o cliente a reenviar

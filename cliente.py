@@ -14,7 +14,7 @@ MAX_RETRIES = 5     #
 class RUDPClientGUI:
     def __init__(self, master):
         self.master = master
-        self.master.title("RUDP Chat (Protocolo Confiável)")
+        self.master.title("CHAT")
         self.master.geometry("900x650")
         
         self.my_name = ""
@@ -298,7 +298,7 @@ class RUDPClientGUI:
         if 'checksum' in d: d = {k: v for k, v in d.items() if k != 'checksum'}
         s = json.dumps(d, sort_keys=True, ensure_ascii=False).encode()
         return zlib.crc32(s) & 0xffffffff
-
+#
     def make_packet(self, obj):
         obj['checksum'] = self.compute_checksum_dict(obj)
         return json.dumps(obj, ensure_ascii=False).encode()
